@@ -18,6 +18,7 @@ public class VRMovement : MonoBehaviour
     private List<XRNodeState> mNodeStates = new List<XRNodeState>();
     private Vector3 mHeadPos, mLeftHandPos, mRightHandPos;
     private Vector3 mHeadVelocity, mLeftHandVelocity, mRightHandVeocity;
+    private Vector3 crossProduct;
     private Quaternion mHeadRot, mLeftHandRot, mRightHandRot;
     private float speed = 4f; // increasing this value increases the movement speed
     StreamWriter writer; // for debugging
@@ -57,81 +58,111 @@ public class VRMovement : MonoBehaviour
                     nodeState.TryGetPosition(out mHeadPos);
                     nodeState.TryGetRotation(out mHeadRot);
 
+                    Vector3 yVectorDirection;
+
+                    void Update()
+                    {
+                        if (getVelocityX() > 0) 
+                        {
+                            yVectorDirection = transform.up;
+                        }
+                        else if (getVelocityX() < 0)
+                        {
+                            yVectorDirection = -transform.up;
+                        }
+
+                        // Get the cross product of the headset's horizontal velocity
+                        crossProduct = Vector3.Cross(mHeadVelocity, yVectorDirection);
+
+                        Debug.Debug.DrawRay(yVectorDirection, crossProduct*100, color = Color.red, bool depthTest = true);
+
+                        // Convert the headset's velocity into a direction relative to the player's transform
+                        // Vector3 direction = transform.TransformDirection(mHeadVelocity);
+                        
+                        // Test: draw ray to make sure cross product vector faces the correct direction
+
+                        // // Calculate the new position of the player
+                        // Vector3 newPosition = transform.position + direction * speed * Time.deltaTime;
+
+                        // // Update the player's position
+                        // transform.position = newPosition;
+    }
+
                     // QUADRANT A 
                     // ==============
-                    if (isAngleInQuadA(getVelocityX(), getVelocityZ() )  &&  OVRInput.Get(OVRInput.Button.Four))
-                    {
-                        if (isLeftStepInQuadA()) // Left step
-                        {
-                            stepForward(getVelocityX(), getVelocityZ());
-                            break;
-                        }
-                    }
-                    if ( isAngleInQuadA(-getVelocityX(), -getVelocityZ())  && OVRInput.Get(OVRInput.Button.Four))
-                    {
-                        if (isRightStepInQuadA()) // Right step
-                        {
-                            stepForward(-getVelocityX(), -getVelocityZ());
-                            break;
-                        }
-                    }
+                    // if (isAngleInQuadA(getVelocityX(), getVelocityZ() )  &&  OVRInput.Get(OVRInput.Button.Four))
+                    // {
+                    //     if (isLeftStepInQuadA()) // Left step
+                    //     {
+                    //         stepForward(getVelocityX(), getVelocityZ());
+                    //         break;
+                    //     }
+                    // }
+                    // if ( isAngleInQuadA(-getVelocityX(), -getVelocityZ())  && OVRInput.Get(OVRInput.Button.Four))
+                    // {
+                    //     if (isRightStepInQuadA()) // Right step
+                    //     {
+                    //         stepForward(-getVelocityX(), -getVelocityZ());
+                    //         break;
+                    //     }
+                    // }
 
-                    // QUADRANT B
-                    // ==============
-                    if (isAngleInQuadB(-getVelocityX(), -getVelocityZ()) && OVRInput.Get(OVRInput.Button.Two))
-                    {
-                        if (isLeftStepInQuadB()) // Left step
-                        {
-                            stepForward(-getVelocityX(), -getVelocityZ());
-                            break;
-                        }
-                    }
-                    if (isAngleInQuadB(getVelocityX(), getVelocityZ()) && OVRInput.Get(OVRInput.Button.Two))
-                    {
-                        if (isRightStepInQuadB()) // Right step
-                        {
-                            stepForward(getVelocityX(), getVelocityZ());
-                            break;
-                        }
-                    }
+                    // // QUADRANT B
+                    // // ==============
+                    // if (isAngleInQuadB(-getVelocityX(), -getVelocityZ()) && OVRInput.Get(OVRInput.Button.Two))
+                    // {
+                    //     if (isLeftStepInQuadB()) // Left step
+                    //     {
+                    //         stepForward(-getVelocityX(), -getVelocityZ());
+                    //         break;
+                    //     }
+                    // }
+                    // if (isAngleInQuadB(getVelocityX(), getVelocityZ()) && OVRInput.Get(OVRInput.Button.Two))
+                    // {
+                    //     if (isRightStepInQuadB()) // Right step
+                    //     {
+                    //         stepForward(getVelocityX(), getVelocityZ());
+                    //         break;
+                    //     }
+                    // }
 
-                    // QUADRANT C
-                    // ==============
-                    if (isAngleInQuadC(getVelocityX(), getVelocityZ()))
-                    {
-                        if (isLeftStepInQuadC()) // Left step
-                        {   
-                            stepForward(getVelocityX(), getVelocityZ());
-                            break;
-                        }
-                    }
-                    if (isAngleInQuadC(-getVelocityX(), -getVelocityZ()))
-                    {
-                        if (isRightStepInQuadC()) // Right step
-                        {
-                            stepForward(-getVelocityX(), -getVelocityZ());
-                            break;
-                        }
-                    }
+                    // // QUADRANT C
+                    // // ==============
+                    // if (isAngleInQuadC(getVelocityX(), getVelocityZ()))
+                    // {
+                    //     if (isLeftStepInQuadC()) // Left step
+                    //     {   
+                    //         stepForward(getVelocityX(), getVelocityZ());
+                    //         break;
+                    //     }
+                    // }
+                    // if (isAngleInQuadC(-getVelocityX(), -getVelocityZ()))
+                    // {
+                    //     if (isRightStepInQuadC()) // Right step
+                    //     {
+                    //         stepForward(-getVelocityX(), -getVelocityZ());
+                    //         break;
+                    //     }
+                    // }
 
-                    // QUADRANT D
-                    // ==============
-                    if (isAngleInQuadD(getVelocityX(), getVelocityZ()))
-                    {
-                        if (isLeftStepInQuadD()) // Left step
-                        {   
-                            stepForward(getVelocityX(), getVelocityZ());
-                            break;
-                        }
-                    }
-                    if (isAngleInQuadD(-getVelocityX(), -getVelocityZ()))
-                    {
-                        if (isRightStepInQuadD()) // Right step
-                        {
-                            stepForward(-getVelocityX(), -getVelocityZ());
-                            break;
-                        }
-                    }
+                    // // QUADRANT D
+                    // // ==============
+                    // if (isAngleInQuadD(getVelocityX(), getVelocityZ()))
+                    // {
+                    //     if (isLeftStepInQuadD()) // Left step
+                    //     {   
+                    //         stepForward(getVelocityX(), getVelocityZ());
+                    //         break;
+                    //     }
+                    // }
+                    // if (isAngleInQuadD(-getVelocityX(), -getVelocityZ()))
+                    // {
+                    //     if (isRightStepInQuadD()) // Right step
+                    //     {
+                    //         stepForward(-getVelocityX(), -getVelocityZ());
+                    //         break;
+                    //     }
+                    // }
 
                     break;
 
@@ -224,8 +255,8 @@ public class VRMovement : MonoBehaviour
     private bool isAngleInQuadA(float velocityX, float velocityZ) 
     {
         Vector3 localXAxis = new Vector3(velocityX, 0f, velocityZ);
-        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
-        float signedAngle = SignedAngle(Vector3.forward, localZAxis.normalized, transform.up);
+        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.Normalized);
+        float signedAngle = SignedAngle(Vector3.forward, localZAxis.Normalized, transform.up);
         if (signedAngle < 0f && signedAngle >= -90f)
         {
             return true;
@@ -235,8 +266,8 @@ public class VRMovement : MonoBehaviour
     private bool isAngleInQuadB(float velocityX, float velocityZ) 
     {
         Vector3 localXAxis = new Vector3(velocityX, 0f, velocityZ);
-        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
-        float signedAngle = SignedAngle(Vector3.forward, localZAxis.normalized, transform.up);
+        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis).Normalized;
+        float signedAngle = SignedAngle(Vector3.forward, localZAxis, transform.up);
         // 0 is vertical and 90 is right angle on the right
         if (signedAngle >= 0f && signedAngle <= 90f)
         {
@@ -247,8 +278,8 @@ public class VRMovement : MonoBehaviour
     private bool isAngleInQuadC(float velocityX, float velocityZ) 
     {
         Vector3 localXAxis = new Vector3(velocityX, 0f, velocityZ);
-        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
-        float signedAngle = SignedAngle(Vector3.forward, localZAxis.normalized, transform.up);
+        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.Normalized);
+        float signedAngle = SignedAngle(Vector3.forward, localZAxis.Normalized, transform.up);
         if (signedAngle < -90f && signedAngle >= -180)
         {
             return true;
@@ -258,8 +289,8 @@ public class VRMovement : MonoBehaviour
     private bool isAngleInQuadD(float velocityX, float velocityZ) 
     {
         Vector3 localXAxis = new Vector3(velocityX, 0f, velocityZ);
-        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
-        float signedAngle = SignedAngle(Vector3.forward, localZAxis.normalized, transform.up);
+        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.Normalized);
+        float signedAngle = SignedAngle(Vector3.forward, localZAxis.Normalized, transform.up);
         if (signedAngle > 90f && signedAngle <= 180f)
         {
             return true;
@@ -273,8 +304,20 @@ public class VRMovement : MonoBehaviour
     private void stepForward(float velocityX, float velocityZ)
     {
         Vector3 xAxis = new Vector3(velocityX, 0f, velocityZ);
-        Vector3 zAxis = Vector3.Cross(transform.up, xAxis.normalized);
-        Head.transform.Translate(zAxis.normalized*speed*Time.deltaTime);
+        Vector3 crossProduct = Vector3.Cross(transform.down, xAxis);
+        Vector3 direction = crossProduct.Normalized;
+        Head.transform.position = Vector3.MoveTowards(Head.transform.position, direction, speed * Time.deltaTime);
+        Head.transform.rotation = Quaternion.LookRotation(direction);
+    }
+
+
+
+    /*
+    Returns the current headset's velocity.
+    */
+    private Vector3 getHMDVelocity()
+    {
+        return mHeadVelocity;
     }
 
     /*
