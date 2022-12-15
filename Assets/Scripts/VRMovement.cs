@@ -74,7 +74,26 @@ public class VRMovement : MonoBehaviour
                         // Get the cross product of the headset's horizontal velocity
                         crossProduct = Vector3.Cross(mHeadVelocity, yVectorDirection);
 
-                        Debug.Debug.DrawRay(yVectorDirection, crossProduct*100, color = Color.red, bool depthTest = true);
+                        // Move the camera forward
+                        Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct.normalized, speed * Time.deltaTime);
+                        
+                        // Not sure if use Head or just transform. Experiment with both pls!
+                        // Store the current camera position vector and forward vector
+                        Vector3 currentPosition = Head.transform.position;
+                        Vector3 playerForward = Head.transform.forward;
+
+                        print(transform.position + " transform.position");
+                        print(Head.transform.position + " head.transform.position");
+
+                        // Convert the direction from the player's local space to world space
+                        Vector3 direction = Head.transform.TransformDirection(playerForward);
+                        
+                        // Move the player in the direction of the player's pitch
+                        transform.position = currentPosition + direction * speed * Time.deltaTime;
+                        
+
+
+
 
                         // Convert the headset's velocity into a direction relative to the player's transform
                         // Vector3 direction = transform.TransformDirection(mHeadVelocity);
@@ -299,15 +318,13 @@ public class VRMovement : MonoBehaviour
     }
 
     /*
-    Moves player object forward one unit.
+    Moves player object forward. Distance is based on 
+    the speed speed variable set above.
     */
-    private void stepForward(float velocityX, float velocityZ)
+    private void stepForward()
     {
-        Vector3 xAxis = new Vector3(velocityX, 0f, velocityZ);
-        Vector3 crossProduct = Vector3.Cross(transform.down, xAxis);
-        Vector3 direction = crossProduct.Normalized;
-        Head.transform.position = Vector3.MoveTowards(Head.transform.position, direction, speed * Time.deltaTime);
-        Head.transform.rotation = Quaternion.LookRotation(direction);
+        Vector3 crossProduct = Vector3.Cross(transform.down, mHeadVelocity);
+        Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct.normalized, speed * Time.deltaTime);
     }
 
 
