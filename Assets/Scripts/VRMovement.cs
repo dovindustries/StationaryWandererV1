@@ -1,3 +1,4 @@
+
 // VR Movement script. Property of DovIndustries Inc.
 // Unity's HMD movement API: https://docs.unity3d.com/ScriptReference/XR.XRNodeState.html
 
@@ -14,13 +15,20 @@ and controller input.
 public class VRMovement : MonoBehaviour
 {
     public GameObject Head;
-    public Rigidbody LeftHand, RightHand;
+    public GameObject LeftHand, RightHand;
     private List<XRNodeState> mNodeStates = new List<XRNodeState>();
     private Vector3 mHeadPos, mLeftHandPos, mRightHandPos;
     private Vector3 mHeadVelocity, mLeftHandVelocity, mRightHandVeocity;
     private Vector3 crossProduct;
     private Quaternion mHeadRot, mLeftHandRot, mRightHandRot;
-    private float speed = 4f; // increasing this value increases the movement speed
+    private float speed = 1.0f; // increasing this value increases the movement speed
+    private float signedRotAngle;
+    private Vector3 yVectorDirection;
+    private Vector3 crossProduct;
+    [SerializeField] float minWalkingVelocity = 0.23f;
+    [SerializeField] Vector3 currDirection;
+
+
     StreamWriter writer; // for debugging
     int time; // for debugging
 
@@ -34,6 +42,8 @@ public class VRMovement : MonoBehaviour
             subsystems[i].TryRecenter();
             subsystems[i].TrySetTrackingOriginMode(TrackingOriginModeFlags.Floor);
         }
+        signedRotAngle = 1;
+
         writer = new StreamWriter("C:\\Users\\tova\\Desktop\\output\\output.txt");  // just for debugging
         time = 0;  // also just for debugging
     }
@@ -48,6 +58,10 @@ public class VRMovement : MonoBehaviour
     {
         InputTracking.GetNodeStates(mNodeStates);
 
+        UnityEngine.XR.InputDevice handRDevice = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
+        UnityEngine.XR.InputDevice handLDevice = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
+        UnityEngine.XR.InputDevice hmd = InputDevices.GetDeviceAtXRNode(XRNode.Head);
+
         foreach (XRNodeState nodeState in mNodeStates)
         {
             switch (nodeState.nodeType)
@@ -58,6 +72,7 @@ public class VRMovement : MonoBehaviour
                     nodeState.TryGetPosition(out mHeadPos);
                     nodeState.TryGetRotation(out mHeadRot);
 
+<<<<<<< Updated upstream
                     Vector3 yVectorDirection;
 
                     void Update()
@@ -181,8 +196,230 @@ public class VRMovement : MonoBehaviour
                     //         stepForward(-getVelocityX(), -getVelocityZ());
                     //         break;
                     //     }
+=======
+                    if (getVelocityX() > 0) 
+                    {
+                        yVectorDirection = transform.up;
+                    }
+                    else if (getVelocityX() < 0)
+                    {
+                        yVectorDirection = -transform.up;
+                    }
+
+                    // Get the cross product of the headset's horizontal velocity
+                    crossProduct = Vector3.Cross(mHeadVelocity, yVectorDirection);
+
+                    // Move the camera forward
+                    // Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct.normalized, speed * Time.deltaTime);
+                    
+                    // Not sure if use Head or just transform. Experiment with both pls!
+                    // Store the current camera position vector and forward vector
+                    Vector3 currentPosition = Head.transform.position;
+                    // Vector3 playerForward = Head.transform.rotation;
+
+                    // GET ANGLE BETWEEN CROSS PRODUCT AND HEADSET Y ROTATION
+
+
+
+                    // print(getRotationY() + " head.transform.position");
+
+                    // Convert the direction from the player's local space to world space
+                    // Vector3 direction = Head.transform.TransformDirection(playerForward);
+                    
+                    // Move the player in the direction of the player's pitch
+                    // transform.position = currentPosition + direction * speed * Time.deltaTime;
+
+
+                    if (getVelocityX() > 0) 
+                    {
+                        // right
+                        yVectorDirection = Vector3.up;
+                    }
+                    else if (getVelocityX() < 0)
+                    {
+                        // left
+                        yVectorDirection = -Vector3.up;
+                    }
+
+                    // Get the cross product of the headset's horizontal velocity
+                    crossProduct = Vector3.Cross(yVectorDirection, mHeadVelocity);
+
+                    // Convert the headset's velocity into a direction relative to the player's transform
+                    currDirection = crossProduct.normalized;
+
+
+                    if (getVelocityX() >= minWalkingVelocity || getVelocityX() <= -minWalkingVelocity || getVelocityZ() >= minWalkingVelocity || getVelocityZ() <= -minWalkingVelocity)
+                    {
+                        print(Vector3.Angle(Camera.main.transform.localEulerAngles, -currDirection));
+
+                        Debug.DrawRay(yVectorDirection, -currDirection*50, Color.red);
+                        Debug.DrawRay(Vector3.up, Camera.main.transform.forward, Color.green);
+                        // NOW, FIGURE OUT HOW TO GET THESE LINES!!                         
+
+                        // Update the player's position
+                        // Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct, speed * Time.deltaTime);
+                        // Head.transform.Translate(-direction * Time.deltaTime);
+                        Head.transform.position = Vector3.MoveTowards(Head.transform.position, -currDirection, speed * Time.deltaTime);
+                    }
+                    // if (getVelocityX() >= minWalkingVelocity || getVelocityX() <= -minWalkingVelocity || getVelocityZ() >= minWalkingVelocity || getVelocityZ() <= -minWalkingVelocity)
+                    // {
+                    //     Debug.DrawRay(yVectorDirection, crossProduct*50, Color.green);
+                    //     // Update the player's position
+                    //     // Head.transform.position = Vector3.MoveTowards(Head.transform.position, currDirection, speed * Time.deltaTime);
+                    //     Head.transform.Translate(direction * Time.deltaTime);
+>>>>>>> Stashed changes
                     // }
 
+
+
+                    // }
+                    // else {
+                    //     Vector3 direction = crossProduct.normalized;
+
+                    //     if (getVelocityX() >= minWalkingVelocity || getVelocityX() <= -minWalkingVelocity || getVelocityZ() >= minWalkingVelocity || getVelocityZ() <= -minWalkingVelocity)
+                    //     {
+                    //         // Debug.Log(getVelocityX());
+                    //                             Debug.DrawRay(yVectorDirection, crossProduct*50, Color.red);
+                    //         // Update the player's position
+                    //         // Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct, speed * Time.deltaTime);
+                    //         Head.transform.Translate(direction * Time.deltaTime);
+                    //     }
+                    // }
+                
+                    // else 
+                    // {
+                    //     // Get the cross product of the headset's horizontal velocity
+                    //     crossProduct = Vector3.Cross(yVectorDirection, mHeadVelocity);
+
+                    //     Debug.DrawRay(yVectorDirection, -crossProduct*50, Color.red);
+
+
+                    //     // Convert the headset's velocity into a direction relative to the player's transform
+                    //     Vector3 direction = -crossProduct.normalized;
+
+                    //     if (getVelocityX() >= minWalkingVelocity || getVelocityX() <= -minWalkingVelocity || getVelocityZ() >= minWalkingVelocity || getVelocityZ() <= -minWalkingVelocity)
+                    //     {
+                    //         Debug.Log(getVelocityX());
+                    //         // Update the player's position
+                    //         // Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct, speed * Time.deltaTime);
+                    //         Head.transform.Translate(direction * Time.deltaTime);
+                    //     }
+                    // }
+
+
+                    
+
+               
+
+
+                    // Debug.Log(Camera.main.transform.localEulerAngles.y + " " + isHMDInQuadrantD());
+                    // QUADRANT A 
+                    // ==============
+                    // && Camera.main.transform.localEulerAngles.y  <= 270 ||  FIGURE OUT FOR x AXIS TOO!
+                    // if ( Camera.main.transform.localEulerAngles.y >= 90 )
+                    // {
+                    //     Debug.Log(mHeadRot.eulerAngles[0]);
+                    // }
+                    // else {
+                    //     Debug.Log(-mHeadRot.eulerAngles[0]);
+                    // }
+
+                    // if(!isHMDInQuadrantD()) 
+                    // {
+                    //     if (isAngleInQuadA(getVelocityX(), getVelocityZ())  )
+                    //     {
+                    //         if (isLeftStepInQuadA()) // Left step
+                    //         {
+                    //             stepForward(getVelocityX(), getVelocityZ());
+                    //             Debug.Log("forward A");
+                    //             break;
+                    //         }
+                    //     }
+                    //     if ( isAngleInQuadA(-getVelocityX(), -getVelocityZ()))
+                    //     {
+                    //         if (isRightStepInQuadA()) // Right step
+                    //         {
+                    //             stepForward(-getVelocityX(), -getVelocityZ());
+                    //             // Debug.Log(Camera.main.transform.localEulerAngles.y + " A");
+                    //             Debug.Log("forward A");
+                    //             break;
+                    //         }
+                    //     }
+                    // }
+                    
+
+                    // // QUADRANT B
+                    // // ==============
+                    // if  (!isHMDInQuadrantC()) {
+                    //     if (isAngleInQuadB(-getVelocityX(), -getVelocityZ()))
+                    //     {
+                    //         if (isLeftStepInQuadB()) // Left step
+                    //         {
+                    //             stepForward(-getVelocityX(), -getVelocityZ());
+                    //             // Debug.Log("forward BL " +  Camera.main.transform.localEulerAngles.y);
+                    //             break;
+                    //         }
+                    //     }
+                    //     if (isAngleInQuadB(getVelocityX(), getVelocityZ()) && !isHMDInQuadrantC())
+                    //     {
+                    //         if (isRightStepInQuadB()) // Right step
+                    //         {
+                    //             stepForward(getVelocityX(), getVelocityZ());
+                    //             // Debug.Log("forward BR " +  Camera.main.transform.localEulerAngles.y);
+                    //             break;
+                    //         }
+                    //     }
+                    // }
+                    
+
+                    // // QUADRANT C
+                    // // ==============
+                    // if (isAngleInQuadC(getVelocityX(), getVelocityZ()))
+                    // {
+                    //     if (isLeftStepInQuadC()) // Left step
+                    //     {   
+                    //         stepForward(getVelocityX(), getVelocityZ());
+                    //         // Debug.Log("forward C");
+                    //         break;
+                    //     }
+                    // }
+                    // if (isAngleInQuadC(-getVelocityX(), -getVelocityZ()))
+                    // {
+                    //     if (isRightStepInQuadC()) // Right step
+                    //     {
+                    //         stepForward(-getVelocityX(), -getVelocityZ());
+                    //         // Debug.Log("forward C");
+                    //         break;
+                    //     }
+                    // }
+
+                    // // QUADRANT D
+                    // // ==============
+                    // if (isAngleInQuadD(getVelocityX(), getVelocityZ()))
+                    // {
+                    //     if (isLeftStepInQuadD()) // Left step
+                    //     {   
+                    //         stepForward(getVelocityX(), getVelocityZ());
+                    //         // Debug.Log("forward D");
+                    //         break;
+                    //     }
+                        
+                    // }
+                    // if (isAngleInQuadD(-getVelocityX(), -getVelocityZ()))
+                    // {
+                    //     if (isRightStepInQuadD()) // Right step
+                    //     {
+                    //         stepForward(-getVelocityX(), -getVelocityZ());
+                    //         // Debug.Log("forward D");
+                    //         break;
+                    //     }
+                    // }
+                    // // else {
+                    // //     stepForward(Mathf.Abs(getVelocityX()), Mathf.Abs(getVelocityZ()));
+                    // //     Vector3 localXAxis = new Vector3(getVelocityX(), 0f, getVelocityZ());
+                    // //     Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
+                    // //     Debug.Log("out " + SignedAngle(Vector3.forward, localZAxis.normalized ,transform.up));
+                    // // }
                     break;
 
                 // Note to future self:
@@ -213,6 +450,17 @@ public class VRMovement : MonoBehaviour
         time += 1;
     }
 
+
+
+    private bool isHMDInQuadrantC()
+    {
+        return Camera.main.transform.localEulerAngles.y >= 180 && Camera.main.transform.localEulerAngles.y <= 270;
+    }
+
+    private bool isHMDInQuadrantD()
+    {
+        return Camera.main.transform.localEulerAngles.y >= 90 && Camera.main.transform.localEulerAngles.y <= 180;
+    }
 
     /*
     THESE METHODS RETURN WHETHER THE HMD IS MOVING TO THE LEFT OR RIGHT
@@ -255,41 +503,62 @@ public class VRMovement : MonoBehaviour
     }
 
     
-    /*
-    Returns the current angle as a signed value from [0,180] U [-180,0] 
-    given from, to, and normal vectors.
-    */
-    private static float SignedAngle( Vector3 from, Vector3 to, Vector3 normal )
-    {
-        float angle = Vector3.Angle( from, to );
-        float sign = Mathf.Sign( Vector3.Dot( normal, Vector3.Cross( from, to ) ) );
-        return angle * sign;
-    }
+    // /*
+    // Returns the current angle as a signed value from [0,180] U [-180,0]
+    // given from, to, and normal vectors.
+    // */
+    // private static float SignedAngle( Vector3 from, Vector3 to, Vector3 normal )
+    // {
+    //     float angle = Vector3.Angle( from, to );
+
+    //     float sign = Mathf.Sign( Vector3.Dot( normal, Vector3.Cross( from, to ) ) );
+    //     Debug.Log((sign) + " angles");
+
+    //     return angle * sign;
+    // }
 
 
     /*
     THE FOLLOWING METHODS RETURN WHETHER THE CURRENT VELOCITY VECTOR
     IS IN THE REQUESTED QUADRANT.
+
+    I REMOVED THE NORMALIZE FROM localZAxis.normalize!!! if it does not work, add normalized back!!!!
     */
     private bool isAngleInQuadA(float velocityX, float velocityZ) 
     {
         Vector3 localXAxis = new Vector3(velocityX, 0f, velocityZ);
+<<<<<<< Updated upstream
         Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.Normalized);
         float signedAngle = SignedAngle(Vector3.forward, localZAxis.Normalized, transform.up);
         if (signedAngle < 0f && signedAngle >= -90f)
+=======
+        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
+        float signedAngle = Vector3.SignedAngle( localZAxis, transform.forward, Vector3.up);
+        if (signedAngle <= 0f && signedAngle >= -90f)
+>>>>>>> Stashed changes
         {
+            // Debug.Log(signedAngle + " AAAA");
+            // Debug.Log(signedAngle + " " + Camera.main.transform.localEulerAngles.y + " A" + !isHMDInQuadrantD());
             return true;
         }
         return false;
     }
-    private bool isAngleInQuadB(float velocityX, float velocityZ) 
+    private bool isAngleInQuadB(float velocityX, float velocityZ)
     {
         Vector3 localXAxis = new Vector3(velocityX, 0f, velocityZ);
+<<<<<<< Updated upstream
         Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis).Normalized;
         float signedAngle = SignedAngle(Vector3.forward, localZAxis, transform.up);
+=======
+        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
+        float signedAngle = Vector3.SignedAngle(localZAxis, transform.forward, Vector3.up);
+>>>>>>> Stashed changes
         // 0 is vertical and 90 is right angle on the right
         if (signedAngle >= 0f && signedAngle <= 90f)
         {
+            // writer.WriteLine("in B " + signedAngle + " " + time +  " " + Camera.main.transform.localEulerAngles.y);
+            // Debug.Log(signedAngle + " BBBB");/
+            Debug.DrawRay(Camera.main.transform.localEulerAngles, localZAxis * 100);
             return true;
         }
         return false;
@@ -297,10 +566,16 @@ public class VRMovement : MonoBehaviour
     private bool isAngleInQuadC(float velocityX, float velocityZ) 
     {
         Vector3 localXAxis = new Vector3(velocityX, 0f, velocityZ);
+<<<<<<< Updated upstream
         Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.Normalized);
         float signedAngle = SignedAngle(Vector3.forward, localZAxis.Normalized, transform.up);
+=======
+        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
+        float signedAngle = Vector3.SignedAngle(localZAxis, transform.forward, Vector3.up);
+>>>>>>> Stashed changes
         if (signedAngle < -90f && signedAngle >= -180)
         {
+            // Debug.Log(signedAngle + " CCCC");
             return true;
         }
         return false;
@@ -308,10 +583,16 @@ public class VRMovement : MonoBehaviour
     private bool isAngleInQuadD(float velocityX, float velocityZ) 
     {
         Vector3 localXAxis = new Vector3(velocityX, 0f, velocityZ);
+<<<<<<< Updated upstream
         Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.Normalized);
         float signedAngle = SignedAngle(Vector3.forward, localZAxis.Normalized, transform.up);
+=======
+        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
+        float signedAngle = Vector3.SignedAngle(localZAxis, transform.forward, Vector3.up);
+>>>>>>> Stashed changes
         if (signedAngle > 90f && signedAngle <= 180f)
         {
+            // Debug.Log(signedAngle + " DDDD");
             return true;
         }
         return false;
