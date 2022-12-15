@@ -72,131 +72,6 @@ public class VRMovement : MonoBehaviour
                     nodeState.TryGetPosition(out mHeadPos);
                     nodeState.TryGetRotation(out mHeadRot);
 
-<<<<<<< Updated upstream
-                    Vector3 yVectorDirection;
-
-                    void Update()
-                    {
-                        if (getVelocityX() > 0) 
-                        {
-                            yVectorDirection = transform.up;
-                        }
-                        else if (getVelocityX() < 0)
-                        {
-                            yVectorDirection = -transform.up;
-                        }
-
-                        // Get the cross product of the headset's horizontal velocity
-                        crossProduct = Vector3.Cross(mHeadVelocity, yVectorDirection);
-
-                        // Move the camera forward
-                        Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct.normalized, speed * Time.deltaTime);
-                        
-                        // Not sure if use Head or just transform. Experiment with both pls!
-                        // Store the current camera position vector and forward vector
-                        Vector3 currentPosition = Head.transform.position;
-                        Vector3 playerForward = Head.transform.forward;
-
-                        print(transform.position + " transform.position");
-                        print(Head.transform.position + " head.transform.position");
-
-                        // Convert the direction from the player's local space to world space
-                        Vector3 direction = Head.transform.TransformDirection(playerForward);
-                        
-                        // Move the player in the direction of the player's pitch
-                        transform.position = currentPosition + direction * speed * Time.deltaTime;
-                        
-
-
-
-
-                        // Convert the headset's velocity into a direction relative to the player's transform
-                        // Vector3 direction = transform.TransformDirection(mHeadVelocity);
-                        
-                        // Test: draw ray to make sure cross product vector faces the correct direction
-
-                        // // Calculate the new position of the player
-                        // Vector3 newPosition = transform.position + direction * speed * Time.deltaTime;
-
-                        // // Update the player's position
-                        // transform.position = newPosition;
-    }
-
-                    // QUADRANT A 
-                    // ==============
-                    // if (isAngleInQuadA(getVelocityX(), getVelocityZ() )  &&  OVRInput.Get(OVRInput.Button.Four))
-                    // {
-                    //     if (isLeftStepInQuadA()) // Left step
-                    //     {
-                    //         stepForward(getVelocityX(), getVelocityZ());
-                    //         break;
-                    //     }
-                    // }
-                    // if ( isAngleInQuadA(-getVelocityX(), -getVelocityZ())  && OVRInput.Get(OVRInput.Button.Four))
-                    // {
-                    //     if (isRightStepInQuadA()) // Right step
-                    //     {
-                    //         stepForward(-getVelocityX(), -getVelocityZ());
-                    //         break;
-                    //     }
-                    // }
-
-                    // // QUADRANT B
-                    // // ==============
-                    // if (isAngleInQuadB(-getVelocityX(), -getVelocityZ()) && OVRInput.Get(OVRInput.Button.Two))
-                    // {
-                    //     if (isLeftStepInQuadB()) // Left step
-                    //     {
-                    //         stepForward(-getVelocityX(), -getVelocityZ());
-                    //         break;
-                    //     }
-                    // }
-                    // if (isAngleInQuadB(getVelocityX(), getVelocityZ()) && OVRInput.Get(OVRInput.Button.Two))
-                    // {
-                    //     if (isRightStepInQuadB()) // Right step
-                    //     {
-                    //         stepForward(getVelocityX(), getVelocityZ());
-                    //         break;
-                    //     }
-                    // }
-
-                    // // QUADRANT C
-                    // // ==============
-                    // if (isAngleInQuadC(getVelocityX(), getVelocityZ()))
-                    // {
-                    //     if (isLeftStepInQuadC()) // Left step
-                    //     {   
-                    //         stepForward(getVelocityX(), getVelocityZ());
-                    //         break;
-                    //     }
-                    // }
-                    // if (isAngleInQuadC(-getVelocityX(), -getVelocityZ()))
-                    // {
-                    //     if (isRightStepInQuadC()) // Right step
-                    //     {
-                    //         stepForward(-getVelocityX(), -getVelocityZ());
-                    //         break;
-                    //     }
-                    // }
-
-                    // // QUADRANT D
-                    // // ==============
-                    // if (isAngleInQuadD(getVelocityX(), getVelocityZ()))
-                    // {
-                    //     if (isLeftStepInQuadD()) // Left step
-                    //     {   
-                    //         stepForward(getVelocityX(), getVelocityZ());
-                    //         break;
-                    //     }
-                    // }
-                    // if (isAngleInQuadD(-getVelocityX(), -getVelocityZ()))
-                    // {
-                    //     if (isRightStepInQuadD()) // Right step
-                    //     {
-                    //         stepForward(-getVelocityX(), -getVelocityZ());
-                    //         break;
-                    //     }
-=======
                     if (getVelocityX() > 0) 
                     {
                         yVectorDirection = transform.up;
@@ -250,11 +125,16 @@ public class VRMovement : MonoBehaviour
 
                     if (getVelocityX() >= minWalkingVelocity || getVelocityX() <= -minWalkingVelocity || getVelocityZ() >= minWalkingVelocity || getVelocityZ() <= -minWalkingVelocity)
                     {
-                        print(Vector3.Angle(Camera.main.transform.localEulerAngles, -currDirection));
+                        
+   
 
                         Debug.DrawRay(yVectorDirection, -currDirection*50, Color.red);
                         Debug.DrawRay(Vector3.up, Camera.main.transform.forward, Color.green);
-                        // NOW, FIGURE OUT HOW TO GET THESE LINES!!                         
+                        Debug.DrawLine(-currDirection, Camera.main.transform.forward, Color.yellow);
+                        
+                        // NOW, FIGURE OUT HOW TO GET THESE LINES!!
+
+                        print(Vector3.Angle(Camera.main.transform.forward, -currDirection));
 
                         // Update the player's position
                         // Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct, speed * Time.deltaTime);
@@ -267,7 +147,6 @@ public class VRMovement : MonoBehaviour
                     //     // Update the player's position
                     //     // Head.transform.position = Vector3.MoveTowards(Head.transform.position, currDirection, speed * Time.deltaTime);
                     //     Head.transform.Translate(direction * Time.deltaTime);
->>>>>>> Stashed changes
                     // }
 
 
