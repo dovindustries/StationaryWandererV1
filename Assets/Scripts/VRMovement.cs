@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
 using System.IO;
+using Oculus.VR;
 
 
 /*
@@ -16,23 +17,28 @@ public class VRMovement : MonoBehaviour
 {
     public GameObject Head;
     public GameObject LeftHand, RightHand;
+    GameObject hmd;
     private List<XRNodeState> mNodeStates = new List<XRNodeState>();
     private Vector3 mHeadPos, mLeftHandPos, mRightHandPos;
     private Vector3 mHeadVelocity, mLeftHandVelocity, mRightHandVeocity;
     private Quaternion mHeadRot, mLeftHandRot, mRightHandRot;
-    private float speed = 1.0f; // increasing this value increases the movement speed
+    private float minWalkingVelocity = 0.23f;
+    
     private float signedRotAngle;
     private Vector3 yVectorDirection;
     private Vector3 crossProduct;
-    [SerializeField] float minWalkingVelocity = 0.23f;
-    [SerializeField] Vector3 currDirection;
 
+    [SerializeField] float playerSpeed = 2.0f; // increasing this value increases the movement speed
+
+    [SerializeField] float maxForwardAngle = 110.0f;  // the maximum angle the hmd points in relative to the forward walking motion. Once this value is exceeded, the camera moves backwards.
+    [SerializeField] Vector3 currDirection;
 
     StreamWriter writer; // for debugging
     int time; // for debugging
 
     private void Start()
     {
+
         // Adds all available tracked devices to a list
         List<XRInputSubsystem> subsystems = new List<XRInputSubsystem>();
         SubsystemManager.GetInstances<XRInputSubsystem>(subsystems);
@@ -47,19 +53,10 @@ public class VRMovement : MonoBehaviour
         time = 0;  // also just for debugging
     }
 
-    void Update()
-    {
-        OVRInput.FixedUpdate();
-        OVRInput.Update();
-    }
-
     private void FixedUpdate()
     {
         InputTracking.GetNodeStates(mNodeStates);
-
-        UnityEngine.XR.InputDevice handRDevice = InputDevices.GetDeviceAtXRNode(XRNode.RightHand);
-        UnityEngine.XR.InputDevice handLDevice = InputDevices.GetDeviceAtXRNode(XRNode.LeftHand);
-        UnityEngine.XR.InputDevice hmd = InputDevices.GetDeviceAtXRNode(XRNode.Head);
+        
 
         foreach (XRNodeState nodeState in mNodeStates)
         {
@@ -70,33 +67,6 @@ public class VRMovement : MonoBehaviour
                     nodeState.TryGetVelocity(out mHeadVelocity);
                     nodeState.TryGetPosition(out mHeadPos);
                     nodeState.TryGetRotation(out mHeadRot);
-
-                    if (getVelocityX() > 0) 
-                    {
-                        yVectorDirection = transform.up;
-                    }
-                    else if (getVelocityX() < 0)
-                    {
-                        yVectorDirection = -transform.up;
-                    }
-                    // Move the camera forward
-                    // Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct.normalized, speed * Time.deltaTime);
-                    
-                    // Not sure if use Head or just transform. Experiment with both pls!
-                    // Store the current camera position vector and forward vector
-                    // Vector3 playerForward = Head.transform.rotation;
-
-                    // GET ANGLE BETWEEN CROSS PRODUCT AND HEADSET Y ROTATION
-
-
-
-                    // print(getRotationY() + " head.transform.position");
-
-                    // Convert the direction from the player's local space to world space
-                    // Vector3 direction = Head.transform.TransformDirection(playerForward);
-                    
-                    // Move the player in the direction of the player's pitch
-                    // transform.position = currentPosition + direction * speed * Time.deltaTime;
 
 
                     if (getVelocityX() > 0) 
@@ -122,181 +92,20 @@ public class VRMovement : MonoBehaviour
                         Debug.DrawRay(yVectorDirection, -currDirection*50, Color.red);
                         Debug.DrawRay(Vector3.up, Camera.main.transform.forward, Color.green);
                         Debug.DrawLine(-currDirection, Camera.main.transform.forward, Color.yellow);
-                        
-                        // NOW, FIGURE OUT HOW TO GET THESE LINES!!
 
+                        
                         print(Vector3.Angle(Camera.main.transform.forward, -currDirection));
 
-                        // Update the player's position
-                        // Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct, speed * Time.deltaTime);
-                        // Head.transform.Translate(-direction * Time.deltaTime);
-                        if (Vector3.Angle(Camera.main.transform.forward, -currDirection) <= 90) 
+                        if (Vector3.Angle(Camera.main.transform.forward, -currDirection) <= maxForwardAngle) 
                         {
-                            Head.transform.Translate(-currDirection * Time.deltaTime);
+                            Head.transform.Translate(-currDirection * playerSpeed * Time.deltaTime);
                         }
                         else 
                         {
-                            Head.transform.Translate(currDirection * Time.deltaTime);
+                            Head.transform.Translate(currDirection * playerSpeed * Time.deltaTime);
                         }
                     }
-                    // if (getVelocityX() >= minWalkingVelocity || getVelocityX() <= -minWalkingVelocity || getVelocityZ() >= minWalkingVelocity || getVelocityZ() <= -minWalkingVelocity)
-                    // {
-                    //     Debug.DrawRay(yVectorDirection, crossProduct*50, Color.green);
-                    //     // Update the player's position
-                    //     // Head.transform.position = Vector3.MoveTowards(Head.transform.position, currDirection, speed * Time.deltaTime);
-                    //     Head.transform.Translate(direction * Time.deltaTime);
-                    // }
-
-
-
-                    // }
-                    // else {
-                    //     Vector3 direction = crossProduct.normalized;
-
-                    //     if (getVelocityX() >= minWalkingVelocity || getVelocityX() <= -minWalkingVelocity || getVelocityZ() >= minWalkingVelocity || getVelocityZ() <= -minWalkingVelocity)
-                    //     {
-                    //         // Debug.Log(getVelocityX());
-                    //                             Debug.DrawRay(yVectorDirection, crossProduct*50, Color.red);
-                    //         // Update the player's position
-                    //         // Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct, speed * Time.deltaTime);
-                    //         Head.transform.Translate(direction * Time.deltaTime);
-                    //     }
-                    // }
-                
-                    // else 
-                    // {
-                    //     // Get the cross product of the headset's horizontal velocity
-                    //     crossProduct = Vector3.Cross(yVectorDirection, mHeadVelocity);
-
-                    //     Debug.DrawRay(yVectorDirection, -crossProduct*50, Color.red);
-
-
-                    //     // Convert the headset's velocity into a direction relative to the player's transform
-                    //     Vector3 direction = -crossProduct.normalized;
-
-                    //     if (getVelocityX() >= minWalkingVelocity || getVelocityX() <= -minWalkingVelocity || getVelocityZ() >= minWalkingVelocity || getVelocityZ() <= -minWalkingVelocity)
-                    //     {
-                    //         Debug.Log(getVelocityX());
-                    //         // Update the player's position
-                    //         // Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct, speed * Time.deltaTime);
-                    //         Head.transform.Translate(direction * Time.deltaTime);
-                    //     }
-                    // }
-
-
-                    
-
-               
-
-
-                    // Debug.Log(Camera.main.transform.localEulerAngles.y + " " + isHMDInQuadrantD());
-                    // QUADRANT A 
-                    // ==============
-                    // && Camera.main.transform.localEulerAngles.y  <= 270 ||  FIGURE OUT FOR x AXIS TOO!
-                    // if ( Camera.main.transform.localEulerAngles.y >= 90 )
-                    // {
-                    //     Debug.Log(mHeadRot.eulerAngles[0]);
-                    // }
-                    // else {
-                    //     Debug.Log(-mHeadRot.eulerAngles[0]);
-                    // }
-
-                    // if(!isHMDInQuadrantD()) 
-                    // {
-                    //     if (isAngleInQuadA(getVelocityX(), getVelocityZ())  )
-                    //     {
-                    //         if (isLeftStepInQuadA()) // Left step
-                    //         {
-                    //             stepForward(getVelocityX(), getVelocityZ());
-                    //             Debug.Log("forward A");
-                    //             break;
-                    //         }
-                    //     }
-                    //     if ( isAngleInQuadA(-getVelocityX(), -getVelocityZ()))
-                    //     {
-                    //         if (isRightStepInQuadA()) // Right step
-                    //         {
-                    //             stepForward(-getVelocityX(), -getVelocityZ());
-                    //             // Debug.Log(Camera.main.transform.localEulerAngles.y + " A");
-                    //             Debug.Log("forward A");
-                    //             break;
-                    //         }
-                    //     }
-                    // }
-                    
-
-                    // // QUADRANT B
-                    // // ==============
-                    // if  (!isHMDInQuadrantC()) {
-                    //     if (isAngleInQuadB(-getVelocityX(), -getVelocityZ()))
-                    //     {
-                    //         if (isLeftStepInQuadB()) // Left step
-                    //         {
-                    //             stepForward(-getVelocityX(), -getVelocityZ());
-                    //             // Debug.Log("forward BL " +  Camera.main.transform.localEulerAngles.y);
-                    //             break;
-                    //         }
-                    //     }
-                    //     if (isAngleInQuadB(getVelocityX(), getVelocityZ()) && !isHMDInQuadrantC())
-                    //     {
-                    //         if (isRightStepInQuadB()) // Right step
-                    //         {
-                    //             stepForward(getVelocityX(), getVelocityZ());
-                    //             // Debug.Log("forward BR " +  Camera.main.transform.localEulerAngles.y);
-                    //             break;
-                    //         }
-                    //     }
-                    // }
-                    
-
-                    // // QUADRANT C
-                    // // ==============
-                    // if (isAngleInQuadC(getVelocityX(), getVelocityZ()))
-                    // {
-                    //     if (isLeftStepInQuadC()) // Left step
-                    //     {   
-                    //         stepForward(getVelocityX(), getVelocityZ());
-                    //         // Debug.Log("forward C");
-                    //         break;
-                    //     }
-                    // }
-                    // if (isAngleInQuadC(-getVelocityX(), -getVelocityZ()))
-                    // {
-                    //     if (isRightStepInQuadC()) // Right step
-                    //     {
-                    //         stepForward(-getVelocityX(), -getVelocityZ());
-                    //         // Debug.Log("forward C");
-                    //         break;
-                    //     }
-                    // }
-
-                    // // QUADRANT D
-                    // // ==============
-                    // if (isAngleInQuadD(getVelocityX(), getVelocityZ()))
-                    // {
-                    //     if (isLeftStepInQuadD()) // Left step
-                    //     {   
-                    //         stepForward(getVelocityX(), getVelocityZ());
-                    //         // Debug.Log("forward D");
-                    //         break;
-                    //     }
-                        
-                    // }
-                    // if (isAngleInQuadD(-getVelocityX(), -getVelocityZ()))
-                    // {
-                    //     if (isRightStepInQuadD()) // Right step
-                    //     {
-                    //         stepForward(-getVelocityX(), -getVelocityZ());
-                    //         // Debug.Log("forward D");
-                    //         break;
-                    //     }
-                    // }
-                    // // else {
-                    // //     stepForward(Mathf.Abs(getVelocityX()), Mathf.Abs(getVelocityZ()));
-                    // //     Vector3 localXAxis = new Vector3(getVelocityX(), 0f, getVelocityZ());
-                    // //     Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
-                    // //     Debug.Log("out " + SignedAngle(Vector3.forward, localZAxis.normalized ,transform.up));
-                    // // }
+                  
                     break;
 
                 // Note to future self:
@@ -461,7 +270,7 @@ public class VRMovement : MonoBehaviour
     private void stepForward()
     {
         Vector3 crossProduct = Vector3.Cross(transform.up, mHeadVelocity);
-        Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct.normalized, speed * Time.deltaTime);
+        Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct.normalized, playerSpeed * Time.deltaTime);
     }
 
 
