@@ -19,7 +19,6 @@ public class VRMovement : MonoBehaviour
     private List<XRNodeState> mNodeStates = new List<XRNodeState>();
     private Vector3 mHeadPos, mLeftHandPos, mRightHandPos;
     private Vector3 mHeadVelocity, mLeftHandVelocity, mRightHandVeocity;
-    private Vector3 crossProduct;
     private Quaternion mHeadRot, mLeftHandRot, mRightHandRot;
     private float speed = 1.0f; // increasing this value increases the movement speed
     private float signedRotAngle;
@@ -80,16 +79,11 @@ public class VRMovement : MonoBehaviour
                     {
                         yVectorDirection = -transform.up;
                     }
-
-                    // Get the cross product of the headset's horizontal velocity
-                    crossProduct = Vector3.Cross(mHeadVelocity, yVectorDirection);
-
                     // Move the camera forward
                     // Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct.normalized, speed * Time.deltaTime);
                     
                     // Not sure if use Head or just transform. Experiment with both pls!
                     // Store the current camera position vector and forward vector
-                    Vector3 currentPosition = Head.transform.position;
                     // Vector3 playerForward = Head.transform.rotation;
 
                     // GET ANGLE BETWEEN CROSS PRODUCT AND HEADSET Y ROTATION
@@ -125,9 +119,6 @@ public class VRMovement : MonoBehaviour
 
                     if (getVelocityX() >= minWalkingVelocity || getVelocityX() <= -minWalkingVelocity || getVelocityZ() >= minWalkingVelocity || getVelocityZ() <= -minWalkingVelocity)
                     {
-                        
-   
-
                         Debug.DrawRay(yVectorDirection, -currDirection*50, Color.red);
                         Debug.DrawRay(Vector3.up, Camera.main.transform.forward, Color.green);
                         Debug.DrawLine(-currDirection, Camera.main.transform.forward, Color.yellow);
@@ -139,7 +130,14 @@ public class VRMovement : MonoBehaviour
                         // Update the player's position
                         // Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct, speed * Time.deltaTime);
                         // Head.transform.Translate(-direction * Time.deltaTime);
-                        Head.transform.position = Vector3.MoveTowards(Head.transform.position, -currDirection, speed * Time.deltaTime);
+                        if (Vector3.Angle(Camera.main.transform.forward, -currDirection) <= 90) 
+                        {
+                            Head.transform.Translate(-currDirection * Time.deltaTime);
+                        }
+                        else 
+                        {
+                            Head.transform.Translate(currDirection * Time.deltaTime);
+                        }
                     }
                     // if (getVelocityX() >= minWalkingVelocity || getVelocityX() <= -minWalkingVelocity || getVelocityZ() >= minWalkingVelocity || getVelocityZ() <= -minWalkingVelocity)
                     // {
@@ -406,15 +404,9 @@ public class VRMovement : MonoBehaviour
     private bool isAngleInQuadA(float velocityX, float velocityZ) 
     {
         Vector3 localXAxis = new Vector3(velocityX, 0f, velocityZ);
-<<<<<<< Updated upstream
-        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.Normalized);
-        float signedAngle = SignedAngle(Vector3.forward, localZAxis.Normalized, transform.up);
-        if (signedAngle < 0f && signedAngle >= -90f)
-=======
         Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
         float signedAngle = Vector3.SignedAngle( localZAxis, transform.forward, Vector3.up);
         if (signedAngle <= 0f && signedAngle >= -90f)
->>>>>>> Stashed changes
         {
             // Debug.Log(signedAngle + " AAAA");
             // Debug.Log(signedAngle + " " + Camera.main.transform.localEulerAngles.y + " A" + !isHMDInQuadrantD());
@@ -425,13 +417,8 @@ public class VRMovement : MonoBehaviour
     private bool isAngleInQuadB(float velocityX, float velocityZ)
     {
         Vector3 localXAxis = new Vector3(velocityX, 0f, velocityZ);
-<<<<<<< Updated upstream
-        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis).Normalized;
-        float signedAngle = SignedAngle(Vector3.forward, localZAxis, transform.up);
-=======
         Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
         float signedAngle = Vector3.SignedAngle(localZAxis, transform.forward, Vector3.up);
->>>>>>> Stashed changes
         // 0 is vertical and 90 is right angle on the right
         if (signedAngle >= 0f && signedAngle <= 90f)
         {
@@ -445,13 +432,8 @@ public class VRMovement : MonoBehaviour
     private bool isAngleInQuadC(float velocityX, float velocityZ) 
     {
         Vector3 localXAxis = new Vector3(velocityX, 0f, velocityZ);
-<<<<<<< Updated upstream
-        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.Normalized);
-        float signedAngle = SignedAngle(Vector3.forward, localZAxis.Normalized, transform.up);
-=======
         Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
         float signedAngle = Vector3.SignedAngle(localZAxis, transform.forward, Vector3.up);
->>>>>>> Stashed changes
         if (signedAngle < -90f && signedAngle >= -180)
         {
             // Debug.Log(signedAngle + " CCCC");
@@ -462,13 +444,8 @@ public class VRMovement : MonoBehaviour
     private bool isAngleInQuadD(float velocityX, float velocityZ) 
     {
         Vector3 localXAxis = new Vector3(velocityX, 0f, velocityZ);
-<<<<<<< Updated upstream
-        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.Normalized);
-        float signedAngle = SignedAngle(Vector3.forward, localZAxis.Normalized, transform.up);
-=======
         Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
         float signedAngle = Vector3.SignedAngle(localZAxis, transform.forward, Vector3.up);
->>>>>>> Stashed changes
         if (signedAngle > 90f && signedAngle <= 180f)
         {
             // Debug.Log(signedAngle + " DDDD");
@@ -483,7 +460,7 @@ public class VRMovement : MonoBehaviour
     */
     private void stepForward()
     {
-        Vector3 crossProduct = Vector3.Cross(transform.down, mHeadVelocity);
+        Vector3 crossProduct = Vector3.Cross(transform.up, mHeadVelocity);
         Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct.normalized, speed * Time.deltaTime);
     }
 
