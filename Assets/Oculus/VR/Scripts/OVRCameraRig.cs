@@ -198,6 +198,7 @@ public class OVRCameraRig : MonoBehaviour
 
                 if (OVRNodeStateProperties.GetNodeStatePropertyVector3(Node.CenterEye, NodeStatePropertyType.Position, OVRPlugin.Node.EyeCenter, OVRPlugin.Step.Render, out centerEyePosition))
                     centerEyeAnchor.localPosition = centerEyePosition;
+                    
                 if (OVRNodeStateProperties.GetNodeStatePropertyQuaternion(Node.CenterEye, NodeStatePropertyType.Orientation, OVRPlugin.Node.EyeCenter, OVRPlugin.Step.Render, out centerEyeRotation))
                     centerEyeAnchor.localRotation = centerEyeRotation;
             }

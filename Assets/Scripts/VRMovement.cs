@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
 using System.IO;
-using Oculus.VR;
 
 
 /*
@@ -20,25 +19,50 @@ public class VRMovement : MonoBehaviour
     GameObject hmd;
     private List<XRNodeState> mNodeStates = new List<XRNodeState>();
     private Vector3 mHeadPos, mLeftHandPos, mRightHandPos;
-    private Vector3 mHeadVelocity, mLeftHandVelocity, mRightHandVeocity;
+    private Vector3 mHeadVelocity, mLeftHandVelocity, mRightHandVeocity, mHeadAngularVelocity;
     private Quaternion mHeadRot, mLeftHandRot, mRightHandRot;
+
+    Quaternion headRotation;
+
     private float minWalkingVelocity = 0.23f;
+    private Vector3 cameraVelocity = Vector3.zero;
     
-    private float signedRotAngle;
     private Vector3 yVectorDirection;
-    private Vector3 crossProduct;
+    private Vector3 crossProduct; // represents the direction the player moves towards
 
     [SerializeField] float playerSpeed = 2.0f; // increasing this value increases the movement speed
-
     [SerializeField] float maxForwardAngle = 110.0f;  // the maximum angle the hmd points in relative to the forward walking motion. Once this value is exceeded, the camera moves backwards.
     [SerializeField] Vector3 currDirection;
+    [SerializeField] float smoothTime = 0.3F;
 
     StreamWriter writer; // for debugging
     int time; // for debugging
 
+
+    public OVRPose trackerPose = OVRPose.identity;
+    
+	void Awake()
+	{
+		OVRCameraRig rig = GameObject.FindObjectOfType<OVRCameraRig>();
+
+		if (rig != null)
+			rig.UpdatedAnchors += OnUpdatedAnchors;
+	}
+
+	void OnUpdatedAnchors(OVRCameraRig rig)
+	{
+		if (!enabled)
+			return;
+
+        // problem is somehwere around here
+		OVRPose pose = rig.trackerAnchor.ToOVRPose(true).Inverse();
+		pose = trackerPose * pose;
+		rig.trackingSpace.FromOVRPose(pose, true);
+	}
+
+
     private void Start()
     {
-
         // Adds all available tracked devices to a list
         List<XRInputSubsystem> subsystems = new List<XRInputSubsystem>();
         SubsystemManager.GetInstances<XRInputSubsystem>(subsystems);
@@ -47,8 +71,6 @@ public class VRMovement : MonoBehaviour
             subsystems[i].TryRecenter();
             subsystems[i].TrySetTrackingOriginMode(TrackingOriginModeFlags.Floor);
         }
-        signedRotAngle = 1;
-
         writer = new StreamWriter("C:\\Users\\tova\\Desktop\\output\\output.txt");  // just for debugging
         time = 0;  // also just for debugging
     }
@@ -56,7 +78,7 @@ public class VRMovement : MonoBehaviour
     private void FixedUpdate()
     {
         InputTracking.GetNodeStates(mNodeStates);
-        
+        // xVector = new Vector2(mHeadVelocity[0], mHeadVelocity[1]);
 
         foreach (XRNodeState nodeState in mNodeStates)
         {
@@ -65,9 +87,20 @@ public class VRMovement : MonoBehaviour
                 case XRNode.Head:
                     // DO ALL HMD LOGIC HERE
                     nodeState.TryGetVelocity(out mHeadVelocity);
+                    nodeState.TryGetAngularVelocity(out mHeadAngularVelocity);
                     nodeState.TryGetPosition(out mHeadPos);
                     nodeState.TryGetRotation(out mHeadRot);
 
+                     // Calculate the horizontal component of the HMD velocity
+                    float velocityX = mHeadVelocity.x;
+                    float velocityZ = mHeadVelocity.z;
+                    
+                    // Calculate the horizontal component of the HMD position
+                    float positionX = mHeadPos.x;
+                    float positionY = mHeadPos.y;
+                    float positionZ = mHeadPos.z;
+
+                    // print(Camera.main.transform.position + " x, z " + positionZ);
 
                     if (getVelocityX() > 0) 
                     {
@@ -80,21 +113,16 @@ public class VRMovement : MonoBehaviour
                         yVectorDirection = -Vector3.up;
                     }
 
-                    // Get the cross product of the headset's horizontal velocity
-                    crossProduct = Vector3.Cross(yVectorDirection, mHeadVelocity);
+                    // Calculate the direction the player should move
+                    currDirection = Vector3.Cross(yVectorDirection, mHeadVelocity).normalized;
 
-                    // Convert the headset's velocity into a direction relative to the player's transform
-                    currDirection = crossProduct.normalized;
-
-
-                    if (getVelocityX() >= minWalkingVelocity || getVelocityX() <= -minWalkingVelocity || getVelocityZ() >= minWalkingVelocity || getVelocityZ() <= -minWalkingVelocity)
+                    if ((getVelocityX() >= minWalkingVelocity || getVelocityX() <= -minWalkingVelocity || getVelocityZ() >= minWalkingVelocity || getVelocityZ() <= -minWalkingVelocity))
                     {
-                        Debug.DrawRay(yVectorDirection, -currDirection*50, Color.red);
-                        Debug.DrawRay(Vector3.up, Camera.main.transform.forward, Color.green);
-                        Debug.DrawLine(-currDirection, Camera.main.transform.forward, Color.yellow);
+                        Debug.DrawRay(yVectorDirection, -currDirection*50, Color.red);  // horizontal velocity
+                        Debug.DrawRay(Vector3.up, Camera.main.transform.forward*50, Color.green); // hmd forward direction
+                        Debug.DrawLine(-currDirection, Camera.main.transform.forward, Color.yellow); // angle between both rays
 
-                        
-                        print(Vector3.Angle(Camera.main.transform.forward, -currDirection));
+                        Head.transform.position += currDirection * playerSpeed * Time.deltaTime;
 
                         if (Vector3.Angle(Camera.main.transform.forward, -currDirection) <= maxForwardAngle) 
                         {
@@ -105,175 +133,11 @@ public class VRMovement : MonoBehaviour
                             Head.transform.Translate(currDirection * playerSpeed * Time.deltaTime);
                         }
                     }
-                  
-                    break;
-
-                // Note to future self:
-                // If we notice that head if rotated left or right,
-                // then check what direction hands are in. If hands
-                // are still in forward direction, this means player
-                // is looking in a different direction then their
-                // moving. In this case, move player in direction
-                // of their hands.
-
-                // case XRNode.LeftHand:
-                //     // DO ALL LEFT HAND LOGIC HERE
-                //     //  Debug.Log(m_MainCamera.transform.forward);
-                //     Vector3 m_Input = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
-                //     nodeState.TryGetVelocity(out mLeftHandPos);
-                //     LeftHand.MovePosition(mLeftHandPos  + m_Input * Time.deltaTime * speed);
-                //     LeftHand.MoveRotation(mLeftHandRot.normalized);
-                //     break;
-
-                // case XRNode.RightHand:
-                //     // DO ALL RIGHT HAND LOGIC HERE
-                //     nodeState.TryGetPosition(out mRightHandPos);
-                //     RightHand.MovePosition(mRightHandPos);
-                //     RightHand.MoveRotation(mRightHandRot.normalized);
-                //     break;
+                break;
             }
         }
         time += 1;
     }
-
-
-
-    private bool isHMDInQuadrantC()
-    {
-        return Camera.main.transform.localEulerAngles.y >= 180 && Camera.main.transform.localEulerAngles.y <= 270;
-    }
-
-    private bool isHMDInQuadrantD()
-    {
-        return Camera.main.transform.localEulerAngles.y >= 90 && Camera.main.transform.localEulerAngles.y <= 180;
-    }
-
-    /*
-    THESE METHODS RETURN WHETHER THE HMD IS MOVING TO THE LEFT OR RIGHT
-    WITHIN THE CURRENT QUADRANT.
-
-    Here, if the HMD's velocity meets or exceeds 0.25 units, then that
-    signifies one step forwards/backwards.
-    */
-    private bool isLeftStepInQuadA() 
-    {
-        return  getVelocityX() <= -0.25f || getVelocityZ() <= -0.25f;
-    }
-    private bool isRightStepInQuadA() 
-    {
-        return  getVelocityX() >= 0.25f || getVelocityZ() >= 0.25f;
-    }
-    private bool isLeftStepInQuadB() 
-    {
-        return  getVelocityX() >= 0.25f || getVelocityZ() <= -0.25f;        
-    }
-    private bool isRightStepInQuadB() 
-    {
-        return getVelocityX() <= -0.25f || getVelocityZ() >= 0.25f;
-    }
-    private bool isLeftStepInQuadC() 
-    {
-        return  getVelocityX() >= 0.25f || getVelocityZ() <= -0.25f;                
-    }
-    private bool isRightStepInQuadC() 
-    {
-        return  getVelocityX() <= -0.25f || getVelocityZ() >= 0.25f;
-    }
-    private bool isLeftStepInQuadD() 
-    {
-        return  getVelocityX() >= 0.25f || getVelocityZ() >= 0.25f;            
-    }
-    private bool isRightStepInQuadD() 
-    {
-        return  getVelocityX() <= -0.25f || getVelocityZ() >= 0.25f;
-    }
-
-    
-    // /*
-    // Returns the current angle as a signed value from [0,180] U [-180,0]
-    // given from, to, and normal vectors.
-    // */
-    // private static float SignedAngle( Vector3 from, Vector3 to, Vector3 normal )
-    // {
-    //     float angle = Vector3.Angle( from, to );
-
-    //     float sign = Mathf.Sign( Vector3.Dot( normal, Vector3.Cross( from, to ) ) );
-    //     Debug.Log((sign) + " angles");
-
-    //     return angle * sign;
-    // }
-
-
-    /*
-    THE FOLLOWING METHODS RETURN WHETHER THE CURRENT VELOCITY VECTOR
-    IS IN THE REQUESTED QUADRANT.
-
-    I REMOVED THE NORMALIZE FROM localZAxis.normalize!!! if it does not work, add normalized back!!!!
-    */
-    private bool isAngleInQuadA(float velocityX, float velocityZ) 
-    {
-        Vector3 localXAxis = new Vector3(velocityX, 0f, velocityZ);
-        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
-        float signedAngle = Vector3.SignedAngle( localZAxis, transform.forward, Vector3.up);
-        if (signedAngle <= 0f && signedAngle >= -90f)
-        {
-            // Debug.Log(signedAngle + " AAAA");
-            // Debug.Log(signedAngle + " " + Camera.main.transform.localEulerAngles.y + " A" + !isHMDInQuadrantD());
-            return true;
-        }
-        return false;
-    }
-    private bool isAngleInQuadB(float velocityX, float velocityZ)
-    {
-        Vector3 localXAxis = new Vector3(velocityX, 0f, velocityZ);
-        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
-        float signedAngle = Vector3.SignedAngle(localZAxis, transform.forward, Vector3.up);
-        // 0 is vertical and 90 is right angle on the right
-        if (signedAngle >= 0f && signedAngle <= 90f)
-        {
-            // writer.WriteLine("in B " + signedAngle + " " + time +  " " + Camera.main.transform.localEulerAngles.y);
-            // Debug.Log(signedAngle + " BBBB");/
-            Debug.DrawRay(Camera.main.transform.localEulerAngles, localZAxis * 100);
-            return true;
-        }
-        return false;
-    }
-    private bool isAngleInQuadC(float velocityX, float velocityZ) 
-    {
-        Vector3 localXAxis = new Vector3(velocityX, 0f, velocityZ);
-        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
-        float signedAngle = Vector3.SignedAngle(localZAxis, transform.forward, Vector3.up);
-        if (signedAngle < -90f && signedAngle >= -180)
-        {
-            // Debug.Log(signedAngle + " CCCC");
-            return true;
-        }
-        return false;
-    }
-    private bool isAngleInQuadD(float velocityX, float velocityZ) 
-    {
-        Vector3 localXAxis = new Vector3(velocityX, 0f, velocityZ);
-        Vector3 localZAxis = Vector3.Cross(transform.up, localXAxis.normalized);
-        float signedAngle = Vector3.SignedAngle(localZAxis, transform.forward, Vector3.up);
-        if (signedAngle > 90f && signedAngle <= 180f)
-        {
-            // Debug.Log(signedAngle + " DDDD");
-            return true;
-        }
-        return false;
-    }
-
-    /*
-    Moves player object forward. Distance is based on 
-    the speed speed variable set above.
-    */
-    private void stepForward()
-    {
-        Vector3 crossProduct = Vector3.Cross(transform.up, mHeadVelocity);
-        Head.transform.position = Vector3.MoveTowards(Head.transform.position, crossProduct.normalized, playerSpeed * Time.deltaTime);
-    }
-
-
 
     /*
     Returns the current headset's velocity.
