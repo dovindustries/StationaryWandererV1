@@ -1,0 +1,29 @@
+"""
+ITEM SEARCH SCRIPT V1.0
+
+"""
+
+from flask import Flask, request
+import requests
+
+app = Flask(__name__)
+
+token = 'v^1.1#i^1#r^0#I^3#p^1#f^0#t^H4sIAAAAAAAAAOVYa2wUVRTu9oUECxoKIiFkM/hDqDs7M9vdmR26S7Yvu7XQ4i61FhXncaeddl6Ze4fuGiFrBTRoBGKCkRisJmgCmsAPEASMQvwhgjWI/jDBQNTEmIhEealRvDtbyrYSaOkam7jJZnLvPefcc757XvdSmfKpizY0bbhc4ZlSPJChMsUeDz2NmlpeVjW9pHhuWRGVR+AZyNyXKe0v+aEGCrpm8Q8DaJkGBN6UrhmQdycjhGMbvClAFfKGoAPII4lPxJa28AxJ8ZZtIlMyNcIbr48QoiyzQYEOhpUwJ4YUGs8a12QmzQghK1yI5TiZExhRYmQBr0PogLgBkWCgCMFQDOOjGR/DJGmWZ4I8Q5Ecy3YS3nZgQ9U0MAlJEVFXXd7ltfN0vbmqAoTARlgIEY3HGhOtsXh9w7JkjT9PVnQIhwQSkANHjupMGXjbBc0BN98GutR8wpEkACHhj+Z2GCmUj11T5jbUd6FmqRAriCwAtExJXCBUECgbTVsX0M31yM6osk9xSXlgIBWlb4UoRkPsARIaGi3DIuL13uxnuSNoqqICO0I01MYejbW1EVHZXA27ga374gjoMQ3YvkRthy9IcbJYHQgDnyjJUnUgSA1tlJM2BPOonepMQ1azoEHvMhPVAqw1GI0NnYcNJmo1Wu2YgrIa5dOFr2EYCndmDzV3ig7qNrLnCnQMhNcd3voEhrkRslXRQWBYwugFF6IIIViWKhOjF11fHHKfFIwQ3QhZvN/f19dH9gVI0+7yMxRF+zuWtiSkbqDjYEvp2VjP0au3ZvCprikSwJxQ5VHawrqksK9iBYwuIhoIs0yIG8J9pFrR0bP/mMiz2T8yIgoVIYooVMsCW80KXIAJUXQhIiQ65KT+rB5AFNI+XbB7AbI0QQI+CfuZowNblflAUGECnAJ8ciis+KrDiuITg3LIRysAUACIohTm/k+BMlZXTwDJBqggvl4wP1dRfUu8R9FT6SqV7m1fIaXanNaOdEtzn52We2otucpq6ATNuiJzkbFGww2Nr9NUjEwS718IALKxXjgQmkyIgDwh8xKSaYE2U1Ol9OQ64IAttwk2Stc6aTxOAE3DnwmZGrOseGEydsGMHGeyuD27C1ep/qMqdUOrYNZxJ5dVWX6IBQiWSuI6lI31NCmZut8UcBOSnV7lau0dRXhDIr/opMkuB0CENZFxHzhmJhX7EolLmjx2llzBxEaMnQVfMmRHQre1kVuZSYym2tWN4Lj2TE0EFNHReifkdCq+PEwql8Pm5uxW5VzXT7rGk3C1RNoAmo6NLzxka7YJTpq9wMAtBbJNDWeadnrCyVTXHSSIGphsWbUA2UUVxtfvlPZ7jv3rdtEhlmaZcJiZWD2Q3I5m1WSrCYWuheO42/hHvrREi9wf3e85TPV7DhR7PBRL+egqamF5yYrSkjsJiLMJCQVDFs0UqQoKiROZISDHBmQvSFuCaheXe9SvT0lX8t54Bh6n5gy/8kwtoaflPflQ866vlNEz7qlgGJrBf5YJMlQnteD6aik9u7Qyqc2c97J+cLHDvXDCLDrjGfj2gbVUxTCRx1NWhB2yaP62z6KVzY1T6jJK65bd6deX3L33l3fffHHL288tbZr+66Yr7F1/fZw8983iCwfLa95b+PMgv3/PkY1tX645++CxQzP+XD+r4/TpRbtmz9XlJWcMUHbFe/SheVff2TpYM+vpfftealxeVnXq/cGz1onvj1AHNsM5NtXQtvLEodri7ceTn26Zv2fV3Parb+wLbP6tcoH/8Jod0VcuXVh/6cLM849Nu/zsksxTFxd/dAcZ+3Hb1s937Wz+6Y/dO7RNn2ys3k/vXMAd/10xnnlyypqFg5nKUPCJqp61z782J7Nu9f3id4MVZ2qjH7519KuD937wxflXiw9s29C80lHXbT1dd3L/3pOP9DLVF2eXlJ5rKunzbM8d499CZp2nfRMAAA=='
+
+# Set the API endpoint URL and request headers
+url = 'https://api.ebay.com/sell/inventory/v1/inventory_item'
+headers = {
+  'Authorization': {token}
+}
+
+# Send the GET request to the API endpoint
+response = requests.get(url, headers=headers)
+
+# Check the status code of the response
+if response.status_code == 200:
+  # The request was successful, so parse the response data
+  data = response.json()
+  print(data)
+else:
+  # There was an error with the request
+  print(f'Request failed with status code {response.status_code}')
