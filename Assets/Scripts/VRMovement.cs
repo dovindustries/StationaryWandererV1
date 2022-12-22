@@ -134,7 +134,7 @@ public class VRMovement : MonoBehaviour
 
     private bool isPlayerInForwardFacingAngle(Vector3 currDirection)
     {
-        return Vector3.Angle(Camera.main.transform.forward, currDirection) <= maxForwardAngle
+        return Vector3.Angle(Camera.main.transform.forward, currDirection) <= maxForwardAngle;
     }
 
     private Vector3 getEqualizedYVector()
@@ -156,7 +156,7 @@ public class VRMovement : MonoBehaviour
         return  velocityX >= minWalkingVelocity ||
                 velocityX <= -minWalkingVelocity ||
                 velocityZ >= minWalkingVelocity ||
-                velocityZ <= -minWalkingVelocity
+                velocityZ <= -minWalkingVelocity;
     }
 
     /*
