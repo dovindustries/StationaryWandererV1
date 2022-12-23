@@ -23,12 +23,14 @@ public class VRMovement : MonoBehaviour
     public OVRPose trackerPose = OVRPose.identity;
 
     private List<XRNodeState> mNodeStates = new List<XRNodeState>();
+    Dictionary<XRNode, Vector3> XRNodes = new Dictionary<XRNode, Vector3>();
     private Vector3 mHeadPos, mLeftHandPos, mRightHandPos;
     private Vector3 mHeadVelocity, mLeftHandVelocity, mRightHandVeocity, mHeadAngularVelocity;
     private Quaternion mHeadRot, mLeftHandRot, mRightHandRot;
     private Vector3 cameraVelocity = Vector3.zero;
     private Vector3 yVectorDirection;
     private Vector3 currDirection;
+    private Vector3 position;
 
     [SerializeField] float playerSpeed = 2.0f; // increasing this value increases the movement speed
     [SerializeField] float maxForwardAngle = 110.0f;  // maximum angle hmd points relative to forward walking motion. If exceeded, camera moves backwards.
@@ -60,14 +62,10 @@ public class VRMovement : MonoBehaviour
 
     private void Start()
     {
-        // Adds all available tracked devices to list
-        List<XRInputSubsystem> subsystems = new List<XRInputSubsystem>();
-        SubsystemManager.GetInstances<XRInputSubsystem>(subsystems);
-        for (int i = 0; i < subsystems.Count; i++)
-        {
-            subsystems[i].TryRecenter();
-            subsystems[i].TrySetTrackingOriginMode(TrackingOriginModeFlags.Floor);
-        }
+        // Adds all available tracked devices to dict
+        XRNodes.Add(XRNode.Head, Vector3.zero);
+        XRNodes.Add(XRNode.LeftHand, Vector3.zero);
+        XRNodes.Add(XRNode.RightHand, Vector3.zero);
 
         // For Debugging
         writer = new StreamWriter("C:\\Users\\tova\\Desktop\\output\\output.txt");  
@@ -77,53 +75,71 @@ public class VRMovement : MonoBehaviour
     private void FixedUpdate()
     {
         InputTracking.GetNodeStates(mNodeStates);
-        foreach (XRNodeState nodeState in mNodeStates)
-        {
-            switch (nodeState.nodeType)
-            {
-                case XRNode.Head:
-                    nodeState.TryGetVelocity(out mHeadVelocity);
-                    nodeState.TryGetAngularVelocity(out mHeadAngularVelocity);
-                    nodeState.TryGetPosition(out mHeadPos);
-                    nodeState.TryGetRotation(out mHeadRot);
+        // foreach (XRNodeState nodeState in mNodeStates)
+        // {
+        //     if (XRNodes.ContainsKey(nodeState.nodeType))
+        //     {
+        //         nodeState.TryGetPosition(out Vector3 position);
+        //         nodeState.TryGetVelocity(out mHeadVelocity);
+        //         nodeState.TryGetAngularVelocity(out mHeadAngularVelocity);
+        //         nodeState.TryGetPosition(out mHeadPos);
+        //         nodeState.TryGetRotation(out mHeadRot);
+        //         XRNodes[nodeState.nodeType] = position;
+        //     }
+        // }
+        print(XRNodes[XRNode.Head]);
+        print(XRNodes[XRNode.LeftHand]);
+        print(XRNodes[XRNode.RightHand]);
+        // nodeState.TryGetVelocity(out mHeadVelocity);
+        // nodeState.TryGetAngularVelocity(out mHeadAngularVelocity);
+        // nodeState.TryGetPosition(out mHeadPos);
+        // nodeState.TryGetRotation(out mHeadRot);
 
-                     // Calculate horizontal velocity components of HMD 
-                    float velocityX = mHeadVelocity.x;
-                    float velocityZ = mHeadVelocity.z;
+        //     switch (nodeState.nodeType)
+        //     {
+        //         case XRNode.Head:
+        //             nodeState.TryGetVelocity(out mHeadVelocity);
+        //             nodeState.TryGetAngularVelocity(out mHeadAngularVelocity);
+        //             nodeState.TryGetPosition(out mHeadPos);
+        //             nodeState.TryGetRotation(out mHeadRot);
+
+        //              // Calculate horizontal velocity components of HMD 
+        //             float velocityX = mHeadVelocity.x;
+        //             float velocityZ = mHeadVelocity.z;
                     
-                    // Calculate horizontal position components of HMD 
-                    float positionX = mHeadPos.x;
-                    float positionY = mHeadPos.y;
-                    float positionZ = mHeadPos.z;
+        //             // Calculate horizontal position components of HMD 
+        //             float positionX = mHeadPos.x;
+        //             float positionY = mHeadPos.y;
+        //             float positionZ = mHeadPos.z;
 
-                    yVectorDirection = getEqualizedYVector();
+        //             Vector3 yVectorDirection = getEqualizedYVector(velocityX);
 
-                    // Calculate the direction the player should move towards
-                    currDirection = Vector3.Cross(yVectorDirection, mHeadVelocity).normalized;
+        //             // Calculate the direction the player should move towards
+        //             currDirection = Vector3.Cross(yVectorDirection, mHeadVelocity).normalized;
 
-                    if ( isSideToSideMovementFastEnough(velocityX, velocityZ) )
-                    {
-                        if ( isPlayerInForwardFacingAngle(-currDirection) ) 
-                        {
-                            Debug.DrawRay(yVectorDirection, -currDirection*50, Color.red);  // horizontal velocity
-                            Debug.DrawRay(yVectorDirection, Camera.main.transform.forward*50, Color.green); // direction the hmd is facing
-                            Debug.DrawLine(-currDirection, Camera.main.transform.forward, Color.yellow); // angle between both rays
+        //             if ( isSideToSideMovementFastEnough(velocityX, velocityZ) )
+        //             {
+        //                 if ( isPlayerInForwardFacingAngle(-currDirection) ) 
+        //                 {
+        //                     Debug.DrawRay(yVectorDirection, -currDirection*50, Color.red);  // horizontal velocity
+        //                     Debug.DrawRay(yVectorDirection, Camera.main.transform.forward*50, Color.green); // direction the hmd is facing
+        //                     Debug.DrawLine(-currDirection, Camera.main.transform.forward, Color.yellow); // angle between both rays
 
-                            stepForward(currDirection);
-                        }
-                        else 
-                        {
-                            Debug.DrawRay(yVectorDirection, currDirection*50, Color.red);  // horizontal velocity
-                            Debug.DrawRay(yVectorDirection, Camera.main.transform.forward*50, Color.green); // direction the hmd is facing
-                            Debug.DrawLine(currDirection, Camera.main.transform.forward, Color.yellow); // angle between both rays
+        //                     stepForward(currDirection);
+        //                 }
+        //                 else 
+        //                 {
+        //                     Debug.DrawRay(yVectorDirection, currDirection*50, Color.red);  // horizontal velocity
+        //                     Debug.DrawRay(yVectorDirection, Camera.main.transform.forward*50, Color.green); // direction the hmd is facing
+        //                     Debug.DrawLine(currDirection, Camera.main.transform.forward, Color.yellow); // angle between both rays
                             
-                            stepForward(-currDirection);
-                        }
-                    }
-                break;
-            }
-        }
-        time++; // for testing
+        //                     stepForward(-currDirection);
+        //                 }
+        //             }
+        //         break;
+        //     }
+        // }
+        // time++; // for testing
     }
 
     private void stepForward(Vector3 currDirection) 
@@ -137,7 +153,7 @@ public class VRMovement : MonoBehaviour
         return Vector3.Angle(Camera.main.transform.forward, currDirection) <= maxForwardAngle;
     }
 
-    private Vector3 getEqualizedYVector()
+    private Vector3 getEqualizedYVector(float velocityX)
     {                    
         if (velocityX > 0) 
         {
@@ -149,6 +165,7 @@ public class VRMovement : MonoBehaviour
             // velocity to the left
             return -Vector3.up;
         }
+        return Vector3.zero;
     }
 
     private bool isSideToSideMovementFastEnough(float velocityX, float velocityZ)
