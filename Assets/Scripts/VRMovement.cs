@@ -32,6 +32,11 @@ public class VRMovement : MonoBehaviour
     private Vector3 currDirection;
     private Vector3 position;
 
+    // Create an XRNodeState object to store the state of the XRNode.Head node
+    XRNodeState hmd = new XRNodeState();
+    XRNodeState leftHand = new XRNodeState();
+    XRNodeState rightHand = new XRNodeState();
+
     [SerializeField] float playerSpeed = 2.0f; // increasing this value increases the movement speed
     [SerializeField] float maxForwardAngle = 110.0f;  // maximum angle hmd points relative to forward walking motion. If exceeded, camera moves backwards.
     [SerializeField] float smoothTime = 0.03f;
@@ -54,7 +59,7 @@ public class VRMovement : MonoBehaviour
 		if (enabled)
         {
             OVRPose pose = new OVRPose();
-            // pose.position = new Vector3(1, 2, 3);
+            // pose.position = new Vector3(1, 2, 3); // uncomment to change initial hmd position
             pose.orientation = Quaternion.Euler(0, 127.9f, 0);
             rig.trackingSpace.FromOVRPose(pose, true);
         }
@@ -62,10 +67,39 @@ public class VRMovement : MonoBehaviour
 
     private void Start()
     {
+        
+        // Try to get the current state of the XRNode.Head node
+        if (InputTracking.TryGetNodeState(XRNode.Head, out hmd))
+        {
+            Vector3 positionH;
+            if (hmd.TryGetPosition(out positionH))
+            {
+                Debug.Log($"Position: {positionH}");
+            }
+        }
+
+        if (InputTracking.TryGetNodeState(XRNode.LeftHand, out leftHand))
+        {
+            Vector3 positionL;
+            if (leftHand.TryGetPosition(out positionL))
+            {
+                Debug.Log($"Position: {positionL}");
+            }
+        }
+
+        if (InputTracking.TryGetNodeState(XRNode.RightHand, out rightHand))
+        {
+            Vector3 positionR;
+            if (rightHand.TryGetPosition(out positionR))
+            {
+                Debug.Log($"Position: {positionR}");
+            }
+        }
+
         // Adds all available tracked devices to dict
-        XRNodes.Add(XRNode.Head, Vector3.zero);
-        XRNodes.Add(XRNode.LeftHand, Vector3.zero);
-        XRNodes.Add(XRNode.RightHand, Vector3.zero);
+        // XRNodes.Add(XRNode.Head, Vector3.zero);
+        // XRNodes.Add(XRNode.LeftHand, Vector3.zero);
+        // XRNodes.Add(XRNode.RightHand, Vector3.zero);
 
         // For Debugging
         writer = new StreamWriter("C:\\Users\\tova\\Desktop\\output\\output.txt");  
@@ -87,7 +121,7 @@ public class VRMovement : MonoBehaviour
         //         XRNodes[nodeState.nodeType] = position;
         //     }
         // }
-        print(XRNodes[XRNode.Head]);
+        print(XRNodes[XRNode.Head.position]);
         print(XRNodes[XRNode.LeftHand]);
         print(XRNodes[XRNode.RightHand]);
         // nodeState.TryGetVelocity(out mHeadVelocity);
