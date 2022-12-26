@@ -12,6 +12,7 @@ using System.IO;
 using Oculus.VR;
 
 
+
 /*
 VRMovement contains all the logic to move the player based on HMD
 and controller input.
@@ -22,20 +23,23 @@ public class VRMovement : MonoBehaviour
     public GameObject LeftHand, RightHand;
     public OVRPose trackerPose = OVRPose.identity;
 
-    private List<XRNodeState> mNodeStates = new List<XRNodeState>();
-    Dictionary<XRNode, Vector3> XRNodes = new Dictionary<XRNode, Vector3>();
-    private Vector3 mHeadPos, mLeftHandPos, mRightHandPos;
-    private Vector3 mHeadVelocity, mLeftHandVelocity, mRightHandVeocity, mHeadAngularVelocity;
-    private Quaternion mHeadRot, mLeftHandRot, mRightHandRot;
+    private Vector3 leftControllerPosition, rightControllerPosition;
+    private Quaternion leftControllerRotation, rightControllerRotation;
+    
+    private Vector3 rightControllerVelocity, leftControllerVelocity;
+
+    private Vector3 rightControllerAcceleration, leftControllerAcceleration;
+
+    private float leftControllerAngle, rightControllerAngle;
+    private Vector3 leftControllerAxis, rightControllerAxis;
+
+    private Vector3 hmdPosition;
+    private float hmdAngle;
+    private Vector3 hmdAxis;
     private Vector3 cameraVelocity = Vector3.zero;
     private Vector3 yVectorDirection;
     private Vector3 currDirection;
-    private Vector3 position;
-
-    // Create an XRNodeState object to store the state of the XRNode.Head node
-    XRNodeState hmd = new XRNodeState();
-    XRNodeState leftHand = new XRNodeState();
-    XRNodeState rightHand = new XRNodeState();
+    private OVRDisplay ovrDisplay;
 
     [SerializeField] float playerSpeed = 2.0f; // increasing this value increases the movement speed
     [SerializeField] float maxForwardAngle = 110.0f;  // maximum angle hmd points relative to forward walking motion. If exceeded, camera moves backwards.
@@ -47,133 +51,99 @@ public class VRMovement : MonoBehaviour
     int time;
 
 
-	private void Awake()
-	{
-		OVRCameraRig rig = GameObject.FindObjectOfType<OVRCameraRig>();
-		if (rig != null)
-			rig.UpdatedAnchors += OnUpdateOrientAnchors;
-	}
+	// private void Awake()
+	// {
+	// 	OVRCameraRig rig = GameObject.FindObjectOfType<OVRCameraRig>();
+	// 	if (rig != null)
+	// 		rig.UpdatedAnchors += OnUpdateOrientAnchors;
+	// }
 
-	private void OnUpdateOrientAnchors(OVRCameraRig rig)
-	{
-		if (enabled)
-        {
-            OVRPose pose = new OVRPose();
-            // pose.position = new Vector3(1, 2, 3); // uncomment to change initial hmd position
-            pose.orientation = Quaternion.Euler(0, 127.9f, 0);
-            rig.trackingSpace.FromOVRPose(pose, true);
-        }
-	}
+	// private void OnUpdateOrientAnchors(OVRCameraRig rig)
+	// {
+	// 	if (enabled)
+    //     {
+    //         // OVRPose pose = new OVRPose();
+    //         // // pose.position = new Vector3(1, 2, 3);
+    //         // pose.orientation = Quaternion.Euler(0, 127.9f, 0);
+    //         // rig.trackingSpace.FromOVRPose(pose, true);
+    //     }
+	// }
 
-    private void Start()
+    private void Awake()
     {
-        
-        // Try to get the current state of the XRNode.Head node
-        if (InputTracking.TryGetNodeState(XRNode.Head, out hmd))
-        {
-            Vector3 positionH;
-            if (hmd.TryGetPosition(out positionH))
-            {
-                Debug.Log($"Position: {positionH}");
-            }
-        }
-
-        if (InputTracking.TryGetNodeState(XRNode.LeftHand, out leftHand))
-        {
-            Vector3 positionL;
-            if (leftHand.TryGetPosition(out positionL))
-            {
-                Debug.Log($"Position: {positionL}");
-            }
-        }
-
-        if (InputTracking.TryGetNodeState(XRNode.RightHand, out rightHand))
-        {
-            Vector3 positionR;
-            if (rightHand.TryGetPosition(out positionR))
-            {
-                Debug.Log($"Position: {positionR}");
-            }
-        }
-
-        // Adds all available tracked devices to dict
-        // XRNodes.Add(XRNode.Head, Vector3.zero);
-        // XRNodes.Add(XRNode.LeftHand, Vector3.zero);
-        // XRNodes.Add(XRNode.RightHand, Vector3.zero);
+        ovrDisplay = new OVRDisplay();
 
         // For Debugging
         writer = new StreamWriter("C:\\Users\\tova\\Desktop\\output\\output.txt");  
         time = 0;
     }
 
-    private void FixedUpdate()
+    private void Update()
     {
-        InputTracking.GetNodeStates(mNodeStates);
-        // foreach (XRNodeState nodeState in mNodeStates)
-        // {
-        //     if (XRNodes.ContainsKey(nodeState.nodeType))
-        //     {
-        //         nodeState.TryGetPosition(out Vector3 position);
-        //         nodeState.TryGetVelocity(out mHeadVelocity);
-        //         nodeState.TryGetAngularVelocity(out mHeadAngularVelocity);
-        //         nodeState.TryGetPosition(out mHeadPos);
-        //         nodeState.TryGetRotation(out mHeadRot);
-        //         XRNodes[nodeState.nodeType] = position;
-        //     }
-        // }
-        print(XRNodes[XRNode.Head.position]);
-        print(XRNodes[XRNode.LeftHand]);
-        print(XRNodes[XRNode.RightHand]);
-        // nodeState.TryGetVelocity(out mHeadVelocity);
-        // nodeState.TryGetAngularVelocity(out mHeadAngularVelocity);
-        // nodeState.TryGetPosition(out mHeadPos);
-        // nodeState.TryGetRotation(out mHeadRot);
+        // Calculate position and rotation components of HMD
+        Vector3 hmdPosition = InputTracking.GetLocalPosition(XRNode.Head);
+        Quaternion hmdRotation = InputTracking.GetLocalRotation(XRNode.Head);
+        hmdRotation.ToAngleAxis(out hmdAngle, out hmdAxis);
+        
+        // Calculate horizontal velocity components of HMD 
+        float hmdVelocityX = ovrDisplay.velocity.x;
+        float hmdVelocityZ = ovrDisplay.velocity.z;
 
-        //     switch (nodeState.nodeType)
-        //     {
-        //         case XRNode.Head:
-        //             nodeState.TryGetVelocity(out mHeadVelocity);
-        //             nodeState.TryGetAngularVelocity(out mHeadAngularVelocity);
-        //             nodeState.TryGetPosition(out mHeadPos);
-        //             nodeState.TryGetRotation(out mHeadRot);
+        // Calculate horizontal acceleration components of HMD 
+        float hmdAccelerationX = ovrDisplay.acceleration.x;
+        float hmdAccelerationZ = ovrDisplay.acceleration.z;
+        
+        // Seperate horizontal position components of HMD 
+        float hmdPositionX = hmdPosition.x;
+        float hmdPositionY = hmdPosition.y;
+        float hmdPositionZ = hmdPosition.z;
+        
+        if (OVRInput.GetControllerPositionTracked(OVRInput.Controller.LTouch)) {
+            leftControllerPosition =  OVRInput.GetLocalControllerPosition(OVRInput.Controller.LTouch);
+            leftControllerRotation = OVRInput.GetLocalControllerRotation(OVRInput.Controller.LTouch);
+            leftControllerRotation.ToAngleAxis(out leftControllerAngle, out leftControllerAxis);
+            leftControllerVelocity = OVRInput.GetLocalControllerVelocity(OVRInput.Controller.LTouch);
+            leftControllerAcceleration = OVRInput.GetLocalControllerAcceleration(OVRInput.Controller.LTouch);
+        }
 
-        //              // Calculate horizontal velocity components of HMD 
-        //             float velocityX = mHeadVelocity.x;
-        //             float velocityZ = mHeadVelocity.z;
-                    
-        //             // Calculate horizontal position components of HMD 
-        //             float positionX = mHeadPos.x;
-        //             float positionY = mHeadPos.y;
-        //             float positionZ = mHeadPos.z;
+        if (OVRInput.GetControllerPositionTracked(OVRInput.Controller.RTouch)) {
+            rightControllerPosition =  OVRInput.GetLocalControllerPosition(OVRInput.Controller.RTouch);
+            rightControllerRotation = OVRInput.GetLocalControllerRotation(OVRInput.Controller.RTouch);
+            rightControllerRotation.ToAngleAxis(out rightControllerAngle, out rightControllerAxis);
+            rightControllerVelocity = OVRInput.GetLocalControllerVelocity(OVRInput.Controller.RTouch);
+            rightControllerAcceleration = OVRInput.GetLocalControllerAcceleration(OVRInput.Controller.RTouch);
+        }
 
-        //             Vector3 yVectorDirection = getEqualizedYVector(velocityX);
 
-        //             // Calculate the direction the player should move towards
-        //             currDirection = Vector3.Cross(yVectorDirection, mHeadVelocity).normalized;
+        // Vector3 leftHandPosition = InputTracking.GetLocalPosition(XRNode.LeftHand);
 
-        //             if ( isSideToSideMovementFastEnough(velocityX, velocityZ) )
-        //             {
-        //                 if ( isPlayerInForwardFacingAngle(-currDirection) ) 
-        //                 {
-        //                     Debug.DrawRay(yVectorDirection, -currDirection*50, Color.red);  // horizontal velocity
-        //                     Debug.DrawRay(yVectorDirection, Camera.main.transform.forward*50, Color.green); // direction the hmd is facing
-        //                     Debug.DrawLine(-currDirection, Camera.main.transform.forward, Color.yellow); // angle between both rays
 
-        //                     stepForward(currDirection);
-        //                 }
-        //                 else 
-        //                 {
-        //                     Debug.DrawRay(yVectorDirection, currDirection*50, Color.red);  // horizontal velocity
-        //                     Debug.DrawRay(yVectorDirection, Camera.main.transform.forward*50, Color.green); // direction the hmd is facing
-        //                     Debug.DrawLine(currDirection, Camera.main.transform.forward, Color.yellow); // angle between both rays
-                            
-        //                     stepForward(-currDirection);
-        //                 }
-        //             }
-        //         break;
-        //     }
-        // }
-        // time++; // for testing
+
+        yVectorDirection = getEqualizedYVector(hmdVelocityX);
+
+        // Calculate the direction the player should move towards
+        currDirection = Vector3.Cross(yVectorDirection, ovrDisplay.velocity).normalized;
+
+        if ( isSideToSideMovementFastEnough(hmdVelocityX, hmdVelocityZ) )
+        {
+            if ( isPlayerInForwardFacingAngle(-currDirection) ) 
+            {
+                Debug.DrawRay(yVectorDirection, -currDirection*50, Color.red);  // horizontal velocity
+                Debug.DrawRay(yVectorDirection, Camera.main.transform.forward*50, Color.green); // direction the hmd is facing
+                Debug.DrawLine(-currDirection, Camera.main.transform.forward, Color.yellow); // angle between both rays
+
+                stepForward(currDirection);
+            }
+            else
+            {
+                Debug.DrawRay(yVectorDirection, currDirection*50, Color.red);  // horizontal velocity
+                Debug.DrawRay(yVectorDirection, Camera.main.transform.forward*50, Color.green); // direction the hmd is facing
+                Debug.DrawLine(currDirection, Camera.main.transform.forward, Color.yellow); // angle between both rays
+                
+                stepForward(-currDirection);
+            }
+        }
+        time++; // for testing
     }
 
     private void stepForward(Vector3 currDirection) 
@@ -219,4 +189,3 @@ public class VRMovement : MonoBehaviour
     }
 
 }
-
