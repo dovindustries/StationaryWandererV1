@@ -50,25 +50,6 @@ public class VRMovement : MonoBehaviour
     StreamWriter writer; 
     int time;
 
-
-	// private void Awake()
-	// {
-	// 	OVRCameraRig rig = GameObject.FindObjectOfType<OVRCameraRig>();
-	// 	if (rig != null)
-	// 		rig.UpdatedAnchors += OnUpdateOrientAnchors;
-	// }
-
-	// private void OnUpdateOrientAnchors(OVRCameraRig rig)
-	// {
-	// 	if (enabled)
-    //     {
-    //         // OVRPose pose = new OVRPose();
-    //         // // pose.position = new Vector3(1, 2, 3);
-    //         // pose.orientation = Quaternion.Euler(0, 127.9f, 0);
-    //         // rig.trackingSpace.FromOVRPose(pose, true);
-    //     }
-	// }
-
     private void Awake()
     {
         ovrDisplay = new OVRDisplay();
@@ -113,11 +94,6 @@ public class VRMovement : MonoBehaviour
             rightControllerVelocity = OVRInput.GetLocalControllerVelocity(OVRInput.Controller.RTouch);
             rightControllerAcceleration = OVRInput.GetLocalControllerAcceleration(OVRInput.Controller.RTouch);
         }
-
-
-        // Vector3 leftHandPosition = InputTracking.GetLocalPosition(XRNode.LeftHand);
-
-
 
         yVectorDirection = getEqualizedYVector(hmdVelocityX);
 
